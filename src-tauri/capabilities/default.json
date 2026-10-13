@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "PulseLauncher main and launcher windows. Launching is done by app commands, not a shell plugin.",
+  "windows": ["main", "launcher"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "dialog:default",
+    "notification:default"
+  ]
+}

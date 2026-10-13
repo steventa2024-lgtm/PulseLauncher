@@ -1,0 +1,40 @@
+[package]
+name = "pulse-core"
+description = "Platform-independent core of PulseLauncher: storage, search, security, workflow engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+rusqlite = { version = "0.40", features = ["bundled"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+regex = "1"
+dirs = "7"
+sha2 = "0.10"
+once_cell = "1"
+url = "2"
+
+[target.'cfg(windows)'.dependencies]
+png = "0.18"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[[bin]]
+name = "pulse-testapp"
+path = "src/bin/pulse_testapp.rs"
