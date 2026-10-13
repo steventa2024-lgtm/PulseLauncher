@@ -124,8 +124,8 @@ export function App() {
         <header className="flex items-start gap-3 border-b border-[var(--color-line)] px-5 py-3">
           <h1 className="py-1.5 text-lg font-semibold">{title}</h1>
           {notices.length > 0 ? (
-            <div className="ml-auto flex w-80 max-w-[40%] flex-col gap-2">
-              {notices.map((notice) => (
+            <div className="ml-auto flex max-h-28 w-80 max-w-[40%] flex-col gap-2 overflow-y-auto">
+              {[...notices].reverse().map((notice) => (
                 <button
                   key={notice.id}
                   className="card p-3 text-left"
