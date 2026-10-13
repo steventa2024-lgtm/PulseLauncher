@@ -8,6 +8,14 @@ const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  css: {
+    // Tailwind v4 is applied by @tailwindcss/vite. An inline PostCSS config
+    // stops Vite from walking up to a parent workspace and loading an older
+    // tailwindcss PostCSS plugin, which rejects the `@layer base` output.
+    postcss: {
+      plugins: [],
+    },
+  },
   clearScreen: false,
   server: {
     port: 1420,
