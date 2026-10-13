@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["ZeroPulse"]
-repository = "https://github.com/zeropulse/pulselauncher"
+repository = "https://github.com/steventa2024-lgtm/PulseLauncher"
 
 [profile.release]
 codegen-units = 1
