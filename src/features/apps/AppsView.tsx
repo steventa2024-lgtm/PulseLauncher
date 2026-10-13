@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { LayoutGrid, List, Plus, RefreshCw, Star } from "lucide-react";
+import { GripVertical, LayoutGrid, List, Plus, RefreshCw, Star } from "lucide-react";
 import { api, errorText } from "../../lib/api";
 import { sourceLabel, targetText } from "../../lib/text";
 import type { AppEntry, Collection } from "../../lib/types";
 import { AppMark, Empty, Field, Modal } from "../../components/ui";
+import { reorderVisible } from "./reorder";
 
 const FILTERS = ["All", "ZeroPulse", "Developer Tools", "Productivity", "Favorites", "Recent", "Portable"] as const;
 
@@ -28,6 +29,8 @@ export function AppsView({
   const [adding, setAdding] = useState(false);
   const [menu, setMenu] = useState<{ x: number; y: number; app: AppEntry } | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -55,23 +58,31 @@ export function AppsView({
     }
   }
 
-  async function move(app: AppEntry, delta: number) {
-    const ids = apps.map((item) => item.id);
-    const index = ids.indexOf(app.id);
-    const next = index + delta;
-    if (index < 0 || next < 0 || next >= ids.length) return;
-    const swapped = [...ids];
-    const moved = swapped[index];
-    const target = swapped[next];
-    if (moved === undefined || target === undefined) return;
-    swapped[index] = target;
-    swapped[next] = moved;
+  async function persistOrder(next: string[]) {
+    const current = apps.map((item) => item.id).join("\0");
+    if (next.join("\0") === current) return;
     try {
-      await api.reorderApps(swapped);
+      await api.reorderApps(next);
       onChanged();
     } catch (error) {
       onNotice("Reorder", errorText(error));
     }
+  }
+
+  async function move(app: AppEntry, delta: number) {
+    const visibleIds = visible.map((item) => item.id);
+    const index = visibleIds.indexOf(app.id);
+    const neighbor = visibleIds[index + delta];
+    if (index < 0 || neighbor === undefined) return;
+    await persistOrder(reorderVisible(apps.map((item) => item.id), visibleIds, app.id, neighbor));
+  }
+
+  async function dropOn(targetId: string) {
+    const from = draggingId;
+    setDraggingId(null);
+    setOverId(null);
+    if (!from || from === targetId) return;
+    await persistOrder(reorderVisible(apps.map((item) => item.id), visible.map((item) => item.id), from, targetId));
   }
 
   async function scan() {
@@ -121,9 +132,40 @@ export function AppsView({
           {visible.map((app) => (
             <article
               key={app.id}
-              className="card flex gap-3 p-3"
+              className={`card flex gap-3 p-3 ${overId === app.id ? "border-[var(--color-accent)]" : ""} ${draggingId === app.id ? "opacity-60" : ""}`}
               onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, app }); }}
+              onDragOver={(event) => {
+                if (!draggingId || draggingId === app.id) return;
+                event.preventDefault();
+                setOverId(app.id);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                void dropOn(app.id);
+              }}
             >
+              <span
+                role="button"
+                tabIndex={0}
+                draggable
+                aria-label={`Drag ${app.name}`}
+                aria-keyshortcuts="ArrowUp ArrowDown"
+                title="Drag to reorder. Arrow keys move this app in the current list."
+                className="btn btn-ghost cursor-grab self-center px-1"
+                onDragStart={(event) => {
+                  event.dataTransfer?.setData("text/plain", app.id);
+                  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+                  setDraggingId(app.id);
+                  setMenu(null);
+                }}
+                onDragEnd={() => { setDraggingId(null); setOverId(null); }}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowUp") { event.preventDefault(); void move(app, -1); }
+                  if (event.key === "ArrowDown") { event.preventDefault(); void move(app, 1); }
+                }}
+              >
+                <GripVertical size={16} />
+              </span>
               <AppMark name={app.name} icon={icons[app.id]} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">

@@ -8,7 +8,7 @@ If a scan has not found anything, the apps page says so. Use Add app for a progr
 
 Rescan reads the Start Menu on Windows. It updates names and paths and keeps your favorites, tags, and custom names. Removing a discovered app hides it. Removing an app you added deletes that registration. Neither one uninstalls the program.
 
-Right-click an app for Run, Details, Favorite, Copy path, Move up, and Move down.
+Right-click an app for Run, Details, Favorite, Copy path, Move up, and Move down. The grip on a card drags that app onto another card in the current list. Arrow keys on the grip do the same move. Apps hidden by the filter stay where they are.
 
 ## Details
 

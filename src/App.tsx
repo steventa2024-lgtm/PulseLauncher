@@ -120,9 +120,23 @@ export function App() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-[var(--color-line)] px-5 py-3">
-          <h1 className="text-lg font-semibold">{title}</h1>
-          <button className="btn ml-auto" onClick={() => void api.showLauncher().catch((error) => notify("Launcher", errorText(error)))}>
+        <header className="flex items-start gap-3 border-b border-[var(--color-line)] px-5 py-3">
+          <h1 className="py-1.5 text-lg font-semibold">{title}</h1>
+          {notices.length > 0 ? (
+            <div className="ml-auto flex w-80 max-w-[40%] flex-col gap-2">
+              {notices.map((notice) => (
+                <button
+                  key={notice.id}
+                  className="card p-3 text-left"
+                  onClick={() => useUi.getState().dismiss(notice.id)}
+                >
+                  <span className="block font-medium">{notice.title}</span>
+                  <span className="block text-sm text-[var(--color-muted)]">{notice.body}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <button className={`btn shrink-0 ${notices.length > 0 ? "" : "ml-auto"}`} onClick={() => void api.showLauncher().catch((error) => notify("Launcher", errorText(error)))}>
             <Search size={16} /> Open launcher
           </button>
         </header>
@@ -170,18 +184,6 @@ export function App() {
             <SettingsView prefs={prefs} onPrefs={(next) => useUi.getState().setPrefs(next)} onNotice={notify} />
           )}
         </main>
-      </div>
-      <div className="pointer-events-none fixed right-4 top-16 flex w-80 flex-col gap-2">
-        {notices.map((notice) => (
-          <button
-            key={notice.id}
-            className="pointer-events-auto card p-3 text-left"
-            onClick={() => useUi.getState().dismiss(notice.id)}
-          >
-            <span className="block font-medium">{notice.title}</span>
-            <span className="block text-sm text-[var(--color-muted)]">{notice.body}</span>
-          </button>
-        ))}
       </div>
     </div>
   );

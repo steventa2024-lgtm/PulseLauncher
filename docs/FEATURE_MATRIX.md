@@ -22,7 +22,7 @@ Compared as product behavior, not as a claim that any other launcher's code was 
 ## Views
 
 1. Launcher overlay — search, keyboard, prefixes
-2. Apps & Tools — filters, rescan, add, run, details, favorite, move up/down
+2. Apps & Tools — filters, rescan, add, run, details, favorite, move up/down, drag reorder
 3. Commands & Workflows — templates, configure, run, confirm, step list
 4. Settings — appearance, shortcut, privacy, developer commands, Ollama, PulseFlow, backup, diagnostics, component gallery
 5. App details — target, metadata, collections, activity, imported preview or "No preview available"

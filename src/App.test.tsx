@@ -59,4 +59,13 @@ describe("App", () => {
     expect(await screen.findByRole("heading", { name: "Appearance" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Interface gallery" })).toBeInTheDocument();
   });
+
+  it("keeps notices in the header with the page title", () => {
+    useUi.setState({ notices: [{ id: 1, title: "Date copied", body: "2026-10-13" }] });
+    render(<App />);
+    const header = screen.getByRole("banner");
+    expect(header).toHaveTextContent("Apps & Tools");
+    expect(header).toHaveTextContent("Date copied");
+    expect(header).toHaveTextContent("2026-10-13");
+  });
 });

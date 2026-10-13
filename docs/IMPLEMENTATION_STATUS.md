@@ -25,7 +25,7 @@ Host for the tests below: Ubuntu, Rust 1.99, Node 22. `cargo check --target x86_
 | Windows `ShellExecuteExW`, known folders, packaged apps | NOT VERIFIED ON WINDOWS | `platform/windows.rs` compiled for `x86_64-pc-windows-gnu` |
 | Global hotkey, tray, single instance, autostart | PARTIAL | Registered in `shell/mod.rs`. Not exercised against a Windows session or a Linux desktop session in CI |
 | Five UI views | PARTIAL | React views and Vitest navigation. On this Linux desktop the WebKit window showed all five views: empty scan with an explicit Windows-only message, a rejected non-.exe path, a real `.exe` registration, details with "No preview available", workflow readiness (Ready / Needs setup / Unavailable), Copy Today's Date succeeding with the machine's date, and the calculator result 144. Global hotkey and Windows shell launch were not exercised |
-| Move up / move down | PARTIAL | Calls `reorder_apps`. No pointer drag-and-drop |
+| Reorder | DONE | Move up, move down, arrow keys, and a drag handle call `reorder_apps`. A filtered list reorders only the visible apps (`reorderVisible`) |
 | Window screenshot capture | NOT STARTED | Details tells the user to import an image. No capture API exists |
 | NSIS installer | NOT STARTED | `tauri.conf.json` targets NSIS per-user with the WebView2 bootstrapper. No installer file was produced |
 | Code signing | NOT STARTED | The binary would be unsigned. SmartScreen must not be bypassed |
@@ -37,7 +37,7 @@ All twelve are seeded by stable `template_key` and are not duplicated on restart
 
 | Template | Readiness without extra setup |
 | --- | --- |
-| Open Downloads | Ready when the OS known folder resolves. The unit test recorded that path on this machine |
+| Open Downloads | Ready when the OS known folder resolves. The unit test asserts that path when it exists, and returns without an assertion when the folder is absent |
 | Open Documents | Same, for Documents |
 | Open Windows Settings | Unavailable when `is_windows` is false |
 | Open Task Manager | Needs setup / unavailable when `taskmgr.exe` is absent |

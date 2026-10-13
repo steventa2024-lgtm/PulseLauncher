@@ -58,4 +58,4 @@ Ollama is off by default and talks only to the configured localhost endpoint. A 
 
 ## What this repository does not include
 
-There is no screenshot-capture of other windows, no drag-and-drop reorder (move up / move down calls the reorder command), and no built installer artifact. See `IMPLEMENTATION_STATUS.md`.
+There is no screenshot-capture of other windows, and no built installer artifact. Catalog order is changed with move up, move down, arrow keys, or a drag handle; that calls `reorder_apps`. See `IMPLEMENTATION_STATUS.md`.
