@@ -309,6 +309,7 @@ pub async fn run_workflow(app: AppHandle, id: String) -> AppResult<WorkflowRun> 
 
 #[tauri::command]
 pub fn confirm_workflow(
+    app: AppHandle,
     state: State<AppState>,
     workflow_id: String,
     accepted: bool,
@@ -327,11 +328,19 @@ pub fn confirm_workflow(
     {
         let _ = tx.send(accepted);
     }
+    let _ = app.emit(
+        "workflow-confirm-settled",
+        serde_json::json!({ "workflowId": workflow_id }),
+    );
     Ok(())
 }
 
 #[tauri::command]
-pub fn cancel_workflow(state: State<AppState>, workflow_id: String) -> AppResult<()> {
+pub fn cancel_workflow(
+    app: AppHandle,
+    state: State<AppState>,
+    workflow_id: String,
+) -> AppResult<()> {
     let runs = state.runs.lock().unwrap_or_else(|p| p.into_inner());
     let Some(control) = runs.get(&workflow_id) else {
         return Err(AppError::not_found("That workflow is not running."));
@@ -345,6 +354,10 @@ pub fn cancel_workflow(state: State<AppState>, workflow_id: String) -> AppResult
     {
         let _ = tx.send(false);
     }
+    let _ = app.emit(
+        "workflow-confirm-settled",
+        serde_json::json!({ "workflowId": workflow_id }),
+    );
     Ok(())
 }
 

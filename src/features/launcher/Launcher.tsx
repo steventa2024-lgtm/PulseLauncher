@@ -4,6 +4,7 @@ import { api, errorText } from "../../lib/api";
 import { moveSelection } from "../../lib/text";
 import type { SearchResult } from "../../lib/types";
 import { AppMark, Highlight } from "../../components/ui";
+import { ConfirmPrompt } from "../workflows/ConfirmPrompt";
 
 const KIND: Record<string, string> = {
   app: "App",
@@ -22,29 +23,28 @@ export function Launcher() {
   const [icons, setIcons] = useState<Record<string, string | null>>({});
   const [status, setStatus] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const requestId = useRef(0);
   const selectedKey = results[index]?.key;
+  const selectedKeyRef = useRef<string | undefined>(undefined);
+  selectedKeyRef.current = selectedKey;
 
   useEffect(() => {
     input.current?.focus();
-    const onBlur = () => {
-      /* Focus loss is also handled natively when that preference is on. */
-    };
-    window.addEventListener("blur", onBlur);
-    return () => window.removeEventListener("blur", onBlur);
   }, []);
 
   useEffect(() => {
+    const token = ++requestId.current;
     const handle = window.setTimeout(() => {
+      const key = selectedKeyRef.current;
       api.search(query).then((found) => {
+        if (token !== requestId.current) return;
         setResults(found);
-        setIndex((current) => {
-          const key = results[current]?.key;
-          const kept = found.findIndex((item) => item.key === key);
-          return kept >= 0 ? kept : 0;
-        });
+        const kept = key ? found.findIndex((item) => item.key === key) : -1;
+        setIndex(kept >= 0 ? kept : 0);
         const ids = found.map((item) => item.iconKey).filter((id): id is string => !!id);
         if (ids.length) {
           api.appIcons(ids).then((pairs) => {
+            if (token !== requestId.current) return;
             setIcons((prev) => {
               const next = { ...prev };
               for (const [id, icon] of pairs) next[id] = icon;
@@ -52,11 +52,12 @@ export function Launcher() {
             });
           }).catch(() => undefined);
         }
-      }).catch((error) => setStatus(errorText(error)));
+      }).catch((error) => {
+        if (token !== requestId.current) return;
+        setStatus(errorText(error));
+      });
     }, 40);
     return () => window.clearTimeout(handle);
-    // The previous result list is read to keep the highlight stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const hint = useMemo(() => "↑↓ select · Enter open · Esc close · Ctrl+K commands", []);
@@ -147,6 +148,7 @@ export function Launcher() {
           <span className="flex gap-1"><kbd className="kbd">@</kbd> apps <kbd className="kbd">&gt;</kbd> commands <kbd className="kbd">/</kbd> workflows</span>
         </footer>
       </div>
+      <ConfirmPrompt onNotice={(_title, body) => setStatus(body)} />
     </div>
   );
 }

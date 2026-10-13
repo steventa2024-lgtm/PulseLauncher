@@ -37,7 +37,7 @@ An empty box shows favorites and recent apps. It does not invent any.
 
 Each built-in command shows Ready, Needs setup, or Unavailable, plus the reason. Run is disabled until the state is Ready. Configure saves the folder, app, or URL that template asks for. Reset puts a built-in template back. Your own workflows can be deleted. Built-in ones cannot.
 
-A step that asks you to confirm waits until you continue or decline. Decline stops the run. If a run is in progress, Stop requests cancellation.
+A step that asks you to confirm waits until you continue or decline. The question appears in the dashboard and in the search window, and answering it in either one closes the other. Decline stops the run. If a run is in progress, Stop requests cancellation.
 
 Editing steps can add a notification, a wait, or an "open folder" step, and can reorder or remove steps. A workflow that contains a developer command is not trusted until you turn on developer commands in Settings and choose Trust command.
 

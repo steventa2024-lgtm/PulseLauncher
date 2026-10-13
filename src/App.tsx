@@ -8,6 +8,7 @@ import { AppsView } from "./features/apps/AppsView";
 import { DetailsView } from "./features/details/DetailsView";
 import { Launcher } from "./features/launcher/Launcher";
 import { SettingsView } from "./features/settings/SettingsView";
+import { ConfirmPrompt } from "./features/workflows/ConfirmPrompt";
 import { WorkflowsView } from "./features/workflows/WorkflowsView";
 
 type Page = "apps" | "workflows" | "settings";
@@ -185,6 +186,7 @@ export function App() {
           )}
         </main>
       </div>
+      <ConfirmPrompt onNotice={notify} />
     </div>
   );
 }

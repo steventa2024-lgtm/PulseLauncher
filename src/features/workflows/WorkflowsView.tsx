@@ -3,14 +3,13 @@ import { listen } from "@tauri-apps/api/event";
 import { api, errorText } from "../../lib/api";
 import { readinessLabel } from "../../lib/text";
 import type { AppEntry, Facts, Step, WorkflowRun, WorkflowView } from "../../lib/types";
-import { Field, Modal } from "../../components/ui";
+import { Field } from "../../components/ui";
 
 export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: (t: string, b: string) => void }) {
   const [items, setItems] = useState<WorkflowView[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [facts, setFacts] = useState<Facts | null>(null);
   const [run, setRun] = useState<WorkflowRun | null>(null);
-  const [confirm, setConfirm] = useState<{ workflowId: string; message: string } | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,7 +24,6 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
   useEffect(() => {
     const unsubs = [
       listen<WorkflowRun>("workflow-progress", (e) => setRun(e.payload)).catch(() => () => undefined),
-      listen<{ workflowId: string; message: string }>("workflow-confirm", (e) => setConfirm(e.payload)).catch(() => () => undefined),
     ];
     return () => { unsubs.forEach((p) => void p.then((u) => u())); };
   }, []);
@@ -93,15 +91,6 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
           </section>
         </div>
       ) : <p className="text-[var(--color-muted)]">No workflows stored.</p>}
-      {confirm ? (
-        <Modal title="Confirm this step" onClose={() => { void api.confirmWorkflow(confirm.workflowId, false); setConfirm(null); }}>
-          <p>{confirm.message}</p>
-          <div className="mt-4 flex justify-end gap-2">
-            <button className="btn" onClick={() => { void api.confirmWorkflow(confirm.workflowId, false); setConfirm(null); }}>Decline</button>
-            <button className="btn btn-primary" onClick={() => { void api.confirmWorkflow(confirm.workflowId, true); setConfirm(null); }}>Continue</button>
-          </div>
-        </Modal>
-      ) : null}
     </div>
   );
 }
