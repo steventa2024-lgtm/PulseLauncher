@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PulseLauncher",
+  "version": "0.1.0",
+  "identifier": "dev.zeropulse.pulslauncher",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "dashboard",
+        "title": "PulseLauncher",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true
+      },
+      {
+        "label": "launcher",
+        "url": "index.html?view=launcher",
+        "title": "PulseLauncher",
+        "width": 720,
+        "height": 560,
+        "minWidth": 560,
+        "minHeight": 360,
+        "decorations": false,
+        "transparent": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "resizable": true,
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "shortDescription": "Local-first Windows command launcher",
+    "longDescription": "PulseLauncher searches installed apps, portable executables, and local workflows. It is free, offline, and does not require an account.",
+    "copyright": "Copyright ZeroPulse contributors",
+    "category": "Utility",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

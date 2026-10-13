@@ -1,0 +1,34 @@
+[package]
+name = "pulslauncher"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "PulseLauncher desktop shell"
+publish = false
+
+[lib]
+name = "pulslauncher_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+# Production embeds `frontendDist`. `tauri dev` and a Vite-backed debug run use
+# `--no-default-features`, which loads `devUrl` instead of the bundled assets.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[dependencies]
+pulslauncher-core = { path = "../crates/core" }
+rusqlite = "0.32"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-single-instance = "2"

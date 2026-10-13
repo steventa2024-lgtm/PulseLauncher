@@ -1,0 +1,37 @@
+[package]
+name = "pulslauncher-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Local-first launcher core for PulseLauncher"
+publish = false
+
+[dependencies]
+arboard = "3"
+base64 = "0.22"
+chrono = "0.4"
+open = "5"
+regex = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+ureq = { version = "2.12", features = ["json"] }
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+walkdir = "2"
+
+[target.'cfg(windows)'.dependencies]
+known-folders = "1.4.2"
+winreg = "0.55"
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+] }
+
+[dev-dependencies]
+tempfile = "3"
