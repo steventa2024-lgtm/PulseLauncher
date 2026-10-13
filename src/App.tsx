@@ -126,7 +126,7 @@ export function App() {
             <Search size={16} /> Open launcher
           </button>
         </header>
-        <main className="min-h-0 flex-1 p-5">
+        <main className="min-h-0 flex-1 overflow-auto p-5">
           {bridge === "unavailable" ? (
             <p className="mb-4 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3 text-sm text-[var(--color-muted)]">
               The desktop bridge is not connected. Lists stay empty because PulseLauncher does not invent apps. Open the PulseLauncher window to scan, launch, and save.
@@ -171,7 +171,7 @@ export function App() {
           )}
         </main>
       </div>
-      <div className="pointer-events-none fixed bottom-4 right-4 flex w-80 flex-col gap-2">
+      <div className="pointer-events-none fixed right-4 top-16 flex w-80 flex-col gap-2">
         {notices.map((notice) => (
           <button
             key={notice.id}

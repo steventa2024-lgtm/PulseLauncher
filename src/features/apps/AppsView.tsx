@@ -88,10 +88,10 @@ export function AppsView({
     }
   }
 
-  const chips = [...FILTERS, ...collections.map((c) => c.name)];
+  const chips = Array.from(new Set<string>([...FILTERS, ...collections.map((c) => c.name)]));
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-8">
       <div className="flex flex-wrap items-center gap-2">
         <input className="field max-w-sm" placeholder="Filter apps" aria-label="Filter apps" value={query} onChange={(e) => setQuery(e.target.value)} />
         <button className="btn" onClick={() => void scan()} disabled={scanning}><RefreshCw size={16} /> {scanning ? "Scanning" : "Rescan"}</button>

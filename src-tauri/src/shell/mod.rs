@@ -33,12 +33,26 @@ pub fn hide_launcher(app: &AppHandle) {
 }
 
 pub fn show_launcher(app: &AppHandle) {
-    let Some(window) = app.get_webview_window("launcher") else {
-        return;
-    };
-    position_launcher(&window);
-    let _ = window.show();
-    let _ = window.set_focus();
+    // Defer until the click that asked for the launcher has finished.
+    // Otherwise the overlay is focused and immediately blurred, and the
+    // hide-on-blur preference closes it before it can be seen.
+    let app = app.clone();
+    let _ = app.clone().run_on_main_thread(move || {
+        let Some(window) = app.get_webview_window("launcher") else {
+            eprintln!("launcher window missing");
+            let _ = app.emit(
+                "app-notice",
+                serde_json::json!({
+                    "title": "Launcher",
+                    "body": "The search window was not created."
+                }),
+            );
+            return;
+        };
+        position_launcher(&window);
+        let _ = window.show();
+        let _ = window.set_focus();
+    });
 }
 
 pub fn toggle_launcher(app: &AppHandle) {
@@ -250,9 +264,17 @@ pub fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
                 .preferences()
                 .map(|p| p.hide_launcher_on_blur)
                 .unwrap_or(true);
-            if hide {
-                let _ = window.hide();
+            if !hide {
+                return;
             }
+            let window = window.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(180));
+                if window.is_focused().unwrap_or(false) {
+                    return;
+                }
+                let _ = window.hide();
+            });
         }
         _ => {}
     }

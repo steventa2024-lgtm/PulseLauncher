@@ -46,7 +46,7 @@ export function DetailsView({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-8">
       <button className="btn w-fit" onClick={onBack}>Back to apps</button>
       <section className="card flex flex-wrap items-start gap-4 p-5">
         <AppMark name={app.name} icon={icon} size={72} />
