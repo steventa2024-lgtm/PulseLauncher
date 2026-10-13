@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Least-privilege capability for PulseLauncher windows. All OS actions go through typed, validated PulseLauncher commands; the only plugin permission granted to the frontend is the native open-file/folder picker.",
+  "windows": ["main", "launcher"],
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-hide",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:window:allow-close",
+    "core:window:allow-set-size",
+    "dialog:allow-open"
+  ]
+}

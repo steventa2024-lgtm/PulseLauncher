@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PulseLauncher">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16223A"/>
+      <stop offset="1" stop-color="#090D17"/>
+    </linearGradient>
+    <linearGradient id="ln" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4388FF"/>
+      <stop offset="1" stop-color="#7CC0FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bg)"/>
+  <rect x="17.5" y="17.5" width="477" height="477" rx="110.5" fill="none" stroke="#26344A" stroke-width="3"/>
+  <path d="M96 272 H184 L220 168 L276 360 L316 232 L340 272 H416" fill="none" stroke="url(#ln)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

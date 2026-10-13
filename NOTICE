@@ -1,0 +1,16 @@
+PulseLauncher
+Copyright (c) 2026 ZeroPulse
+
+This product is licensed under the MIT License. See LICENSE.
+
+Some unmodified transitive dependencies are under other permissive licenses,
+including Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, MPL-2.0, and BSL-1.0.
+The complete list generated from the lockfiles is THIRD_PARTY_LICENSES.md.
+
+MPL-2.0 files are not modified by this project. Their corresponding source is
+the crate version recorded in src-tauri/Cargo.lock and published on crates.io.
+
+WebView2, when installed on Windows, is Microsoft software. The NSIS
+configuration asks the installer to download Microsoft's bootstrapper. It is
+not part of this source tree, and this project does not bypass SmartScreen
+or any other Windows security prompt.
