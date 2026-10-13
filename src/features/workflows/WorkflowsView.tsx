@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { Calendar, FileText, Folder, Globe, Rocket, Settings, Shield, Terminal } from "lucide-react";
 import { api, errorText } from "../../lib/api";
 import { readinessLabel } from "../../lib/text";
 import type { AppEntry, Facts, Step, WorkflowRun, WorkflowView } from "../../lib/types";
 import { Field } from "../../components/ui";
+import { HotkeyPill, SearchBox } from "../../components/chrome";
+import { fixtureWorkflows, studioFixtureEnabled } from "../fixture/studio";
 
 export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: (t: string, b: string) => void }) {
   const [items, setItems] = useState<WorkflowView[]>([]);
@@ -12,8 +15,15 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
   function load() {
+    if (studioFixtureEnabled()) {
+      const list = fixtureWorkflows();
+      setItems(list);
+      setSelected((current) => current ?? list[0]?.id ?? null);
+      return;
+    }
     api.listWorkflows().then((list) => {
       setItems(list);
       setSelected((current) => current ?? list[0]?.id ?? null);
@@ -28,10 +38,18 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
     return () => { unsubs.forEach((p) => void p.then((u) => u())); };
   }, []);
 
+  const shown = items.filter((item) => {
+    const q = query.trim().toLowerCase().replace(/^>\s*/, "");
+    return !q || `${item.name} ${item.whatItDoes}`.toLowerCase().includes(q);
+  });
   const current = items.find((item) => item.id === selected) ?? null;
 
   async function runCurrent() {
     if (!current) return;
+    if (studioFixtureEnabled() || current.id.startsWith("fixture:")) {
+      onNotice(current.name, "Fixture rows are not stored and cannot run.");
+      return;
+    }
     setRun(null);
     try {
       const result = await api.runWorkflow(current.id);
@@ -44,9 +62,25 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 lg:grid-cols-[280px_1fr]">
-      <div className="scroll flex flex-col gap-2">
+    <div className="grid h-full min-h-0 gap-4 lg:grid-cols-[minmax(280px,420px)_1fr]">
+      <div className="flex flex-col gap-2">
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="> commands"
+          label="Filter commands"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void runCurrent();
+            }
+          }}
+        />
         <button className="btn" onClick={async () => {
+          if (studioFixtureEnabled()) {
+            onNotice("Workflows", "Fixture rows are not stored. A new workflow is not created.");
+            return;
+          }
           const name = window.prompt("Name for the new workflow");
           if (!name) return;
           const created = await api.createWorkflow(name);
@@ -54,14 +88,19 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
           setSelected(created.id);
         }}>New workflow</button>
         {error ? <p className="text-[var(--color-danger)]">{error}</p> : null}
-        {items.map((item) => (
-          <button key={item.id} className={`card p-3 text-left ${item.id === selected ? "border-[var(--color-accent)]" : ""}`} onClick={() => { setSelected(item.id); setEditing(false); }}>
-            <div className="font-medium">{item.name}</div>
-            <span className={`pill mt-2 ${item.readiness.state === "ready" ? "pill-ok" : item.readiness.state === "unavailable" ? "pill-danger" : "pill-warn"}`}>
-              {readinessLabel(item.readiness.state)}
+        <div className="scroll flex flex-col gap-1" role="listbox" aria-label="Commands">
+        {shown.map((item) => (
+          <button key={item.id} role="option" aria-selected={item.id === selected} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-left ${item.id === selected ? "row-selected" : "border border-transparent"}`} onClick={() => { setSelected(item.id); setEditing(false); }}>
+            <CommandGlyph templateKey={item.templateKey} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium">{item.name}</span>
+              <span className="block truncate text-xs text-[var(--color-muted)]">{item.whatItDoes}</span>
             </span>
+            <HotkeyPill value={item.id === selected ? "Enter" : readinessLabel(item.readiness.state)} />
+            <span className="sr-only">{readinessLabel(item.readiness.state)}</span>
           </button>
         ))}
+        </div>
       </div>
       {current ? (
         <div className="scroll flex flex-col gap-4 pr-1">
@@ -93,6 +132,19 @@ export function WorkflowsView({ apps, onNotice }: { apps: AppEntry[]; onNotice: 
       ) : <p className="text-[var(--color-muted)]">No workflows stored.</p>}
     </div>
   );
+}
+
+function CommandGlyph({ templateKey }: { templateKey: string | null }) {
+  const key = templateKey ?? "";
+  const icon: ReactNode = key.includes("terminal") ? <Terminal size={16} />
+    : key.includes("folder") || key.includes("downloads") || key.includes("documents") ? <Folder size={16} />
+    : key.includes("website") ? <Globe size={16} />
+    : key.includes("note") ? <FileText size={16} />
+    : key.includes("date") ? <Calendar size={16} />
+    : key.includes("settings") ? <Settings size={16} />
+    : key.includes("check") ? <Shield size={16} />
+    : <Rocket size={16} />;
+  return <span className="tile grid h-9 w-9 shrink-0 place-items-center text-[var(--color-accent)]">{icon}</span>;
 }
 
 function Configure({ item, apps, facts, onSaved, onNotice }: { item: WorkflowView; apps: AppEntry[]; facts: Facts | null; onSaved: (w: WorkflowView) => void; onNotice: (t: string, b: string) => void }) {

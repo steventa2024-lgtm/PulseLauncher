@@ -55,16 +55,18 @@ describe("App", () => {
     expect(screen.getByText("No apps yet")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Commands & Workflows" }));
     expect(await screen.findByText("No workflows stored.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const settingsButtons = screen.getAllByRole("button", { name: "Settings" });
+    await user.click(settingsButtons[0]!);
     expect(await screen.findByRole("heading", { name: "Appearance" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Interface gallery" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "About" }));
+    expect(await screen.findByRole("heading", { name: "Interface gallery" })).toBeInTheDocument();
   });
 
   it("keeps notices in the header with the page title", () => {
     useUi.setState({ notices: [{ id: 1, title: "Date copied", body: "2026-10-13" }] });
     render(<App />);
     const header = screen.getByRole("banner");
-    expect(header).toHaveTextContent("Apps & Tools");
+    expect(header).toHaveTextContent("PulseLauncher");
     expect(header).toHaveTextContent("Date copied");
     expect(header).toHaveTextContent("2026-10-13");
   });

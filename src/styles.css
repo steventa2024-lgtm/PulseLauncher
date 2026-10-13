@@ -121,3 +121,62 @@ button { cursor: pointer; }
 .pill-warn { color: var(--color-warn); border-color: color-mix(in srgb, var(--color-warn) 50%, var(--color-line)); }
 .pill-danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 50%, var(--color-line)); }
 .mark { background: color-mix(in srgb, var(--color-accent) 35%, transparent); color: inherit; border-radius: 2px; }
+
+.search-ring {
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent), 0 0 18px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 82%, #0b1a33);
+}
+.search-ring input { border: 0; outline: none; box-shadow: none; background: transparent; }
+.field.hex { width: 7.5rem; }
+.row-selected {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 28%, var(--color-panel)) 0%, var(--color-panel) 100%);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 80%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.tile {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+}
+.tile:hover, .tile:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.nav-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-muted);
+  text-align: left;
+}
+.nav-item[aria-current="page"], .nav-item[aria-selected="true"] {
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-accent) 18%, var(--color-panel));
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+.switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-2);
+  position: relative;
+}
+.switch[data-on="true"] { background: var(--color-accent); border-color: transparent; }
+.switch i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: white;
+}
+.switch[data-on="true"] i { left: 18px; }

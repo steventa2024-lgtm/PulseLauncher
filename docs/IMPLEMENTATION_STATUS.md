@@ -24,32 +24,47 @@ Host for the tests below: Ubuntu, Rust 1.99, Node 22. `cargo check --target x86_
 | Ollama disabled / PulseFlow non-loopback | DONE | `integrations::tests` |
 | Windows `ShellExecuteExW`, known folders, packaged apps | NOT VERIFIED ON WINDOWS | `platform/windows.rs` compiled for `x86_64-pc-windows-gnu` |
 | Global hotkey, tray, single instance, autostart | PARTIAL | Registered in `shell/mod.rs`. Not exercised against a Windows session or a Linux desktop session in CI |
-| Five UI views | PARTIAL | React views and Vitest navigation. On this Linux desktop the WebKit window showed all five views: empty scan with an explicit Windows-only message, a rejected non-.exe path, a real `.exe` registration, details with "No preview available", workflow readiness (Ready / Needs setup / Unavailable), Copy Today's Date succeeding with the machine's date, and the calculator result 144. A later session reordered two registered apps with the grip's arrow key (True moved ahead of Second), kept notices in the header, and declined Check Then Launch after it reported that `/tmp/pulse-true.exe` exists. A synthetic pointer drag did not start a drag in WebKit. Global hotkey and Windows shell launch were not exercised |
-| Reorder | DONE | Move up, move down, arrow keys, and a drag handle call `reorder_apps`. A filtered list reorders only the visible apps (`reorderVisible`). On the Linux desktop, Arrow Down on the grip swapped two apps. The drag handle is visible; a synthetic mouse drag did not start an HTML5 drag in WebKit |
+| Five UI views | PARTIAL | React views and Vitest navigation. The dark-blue studio layout is in the dashboard and the launcher. Captures are in `docs/design/visual-regression/`. On this Linux desktop the WebKit window showed the real catalog (True, Second), Settings appearance controls, and a pointer reorder. Global hotkey and Windows shell launch were not exercised |
+| Reorder | PARTIAL | Move up, move down, arrow keys, and a pointer grip call `reorder_apps`. A filtered list reorders only the visible apps (`reorderVisible`). On Ubuntu WebKit, a real pointer drag of the Second grip onto True placed Second first. That is not a Windows WebView2 result. Vitest covers the same pointerup path with a mocked `elementFromPoint` |
 | Window screenshot capture | NOT STARTED | Details tells the user to import an image. No capture API exists |
 | NSIS installer | NOT STARTED | `tauri.conf.json` targets NSIS per-user with the WebView2 bootstrapper. No installer file was produced |
 | Code signing | NOT STARTED | The binary would be unsigned. SmartScreen must not be bypassed |
 | Linux as a product target | NOT STARTED | Fallback launches are labeled `linux-dev` |
 
+## Phase 3 visual pass
+
+Reference crops are in `docs/design/`. The mapping is `docs/design/REFERENCE_IMPLEMENTATION.md`. `?fixture=studio` draws labeled sample rows in the page only. It does not write SQLite. `npm run dev` without that query stays empty when the bridge is down.
+
+This phase ran, on Ubuntu:
+
+- `npm test`: 21 Vitest tests passed
+- `npx tsc --noEmit`: passed
+- `npm run lint`: passed
+- `cargo test --lib --offline`: 61 passed
+- `cargo clippy --all-targets --offline -- -D warnings`: passed
+- `cargo fmt --all -- --check`: passed
+
+Windows GUI, Start Menu discovery, `ShellExecuteExW`, global hotkey latency, tray session, and the NSIS installer were not run. They stay **UNVERIFIED**. No hotkey median or P95 is reported because none was measured.
+
 ## Templates
 
-All twelve are seeded by stable `template_key` and are not duplicated on restart (`templates_seed_once_and_edits_survive`).
+All twelve are seeded by stable `template_key` and are not duplicated on restart (`templates_seed_once_and_edits_survive`). Windows GUI for every template is **NOT TESTED**. The Linux column is this phase's `cargo test --lib`.
 
-| Template | Readiness without extra setup |
-| --- | --- |
-| Open Downloads | Ready when the OS known folder resolves. The unit test asserts that path when it exists, and returns without an assertion when the folder is absent |
-| Open Documents | Same, for Documents |
-| Open Windows Settings | Unavailable when `is_windows` is false |
-| Open Task Manager | Needs setup / unavailable when `taskmgr.exe` is absent |
-| Open Terminal | Needs setup until a real terminal path is chosen |
-| Open Project Folder | Needs setup until a folder is chosen |
-| Launch Development Workspace | Needs setup until at least two configured items validate |
-| Copy Today's Date | Ready. The test checks the local ISO date |
-| Timestamped Quick Note | Needs setup until a folder is chosen. The test creates a unique `.txt` |
-| Open Project Website | Needs setup until an http(s) URL is saved. `javascript:` is rejected |
-| Launch ZeroPulse Stack | Needs setup while the app list is empty |
-| Check Then Launch | The path may be missing. The missing branch notifies and does not launch. Decline on confirm cancels |
+| Template | Linux unit test | Windows GUI |
+| --- | --- | --- |
+| Open Downloads | Covered when the known folder resolves | NOT TESTED |
+| Open Documents | Same pattern as Downloads | NOT TESTED |
+| Open Windows Settings | Unavailable when `is_windows` is false | NOT TESTED |
+| Open Task Manager | Needs setup / unavailable when `taskmgr.exe` is absent | NOT TESTED |
+| Open Terminal | Needs setup until a real terminal path is chosen | NOT TESTED |
+| Open Project Folder | Needs setup until a folder is chosen | NOT TESTED |
+| Launch Development Workspace | Needs setup until at least two configured items validate | NOT TESTED |
+| Copy Today's Date | Ready. The test checks the local ISO date | NOT TESTED |
+| Timestamped Quick Note | Needs setup until a folder is chosen | NOT TESTED |
+| Open Project Website | Needs setup until an http(s) URL is saved | NOT TESTED |
+| Launch ZeroPulse Stack | Needs setup while the app list is empty | NOT TESTED |
+| Check Then Launch | Missing path does not launch. Decline cancels | NOT TESTED |
 
 ## Production readiness
 
-**NOT READY.** The engine and the interface are implemented and tested on Linux. Windows launch, Start Menu discovery, the global hotkey, the tray session, and the installer have not been run on Windows.
+**NOT READY.** The engine and the studio UI are implemented and tested on Linux. Windows launch, Start Menu discovery, the global hotkey, the tray session, and the installer have not been run on Windows.

@@ -3,6 +3,7 @@ import { api, errorText } from "../../lib/api";
 import { formatBytes, formatWhen, kindLabel, sourceLabel, targetText } from "../../lib/text";
 import type { AppDetails, Collection } from "../../lib/types";
 import { AppMark, Field } from "../../components/ui";
+import { fixtureDetails, studioFixtureEnabled } from "../fixture/studio";
 
 export function DetailsView({
   id,
@@ -25,6 +26,14 @@ export function DetailsView({
   const [error, setError] = useState("");
 
   function load() {
+    if (studioFixtureEnabled()) {
+      const local = fixtureDetails(id);
+      if (local) {
+        setDetails(local);
+        setError("");
+        return;
+      }
+    }
     api.getApp(id).then(setDetails).catch((e) => setError(errorText(e)));
   }
   useEffect(load, [id]);
@@ -33,8 +42,13 @@ export function DetailsView({
   if (!details) return <p className="text-[var(--color-muted)]">Loading details…</p>;
   const app = details.app;
   const manual = app.source === "manual";
+  const fixture = app.tags.includes("fixture") || app.target.launchTarget.startsWith("fixture:");
 
   async function act(work: () => Promise<{ message: string } | void>, title: string) {
+    if (fixture) {
+      onNotice(title, "Fixture screenshot rows are not installed and cannot launch, pin, or edit.");
+      return;
+    }
     try {
       const result = await work();
       onNotice(title, result && "message" in result ? result.message : "Done");
@@ -46,7 +60,8 @@ export function DetailsView({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-8">
+    <div className="flex flex-col gap-4 pb-8 lg:flex-row">
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
       <button className="btn w-fit" onClick={onBack}>Back to apps</button>
       <section className="card flex flex-wrap items-start gap-4 p-5">
         <AppMark name={app.name} icon={icon} size={72} />
@@ -65,10 +80,10 @@ export function DetailsView({
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn btn-primary" onClick={() => void act(() => api.launchApp(app.id), "Launch")}>Launch</button>
-          <button className="btn" onClick={() => void act(() => api.launchApp(app.id, app.target.arguments), "Launch")}>Run with arguments</button>
-          <button className="btn" onClick={() => void act(() => api.revealApp(app.id), "Location")}>Open file location</button>
-          <button className="btn" onClick={() => void act(async () => { await api.copyText(targetText(app)); return { message: "Path copied" }; }, "Copy")}>Copy path</button>
+          <button className="btn btn-primary" disabled={fixture} onClick={() => void act(() => api.launchApp(app.id), "Open")}>Open</button>
+          <button className="btn" disabled={fixture} onClick={() => void act(() => api.launchApp(app.id, app.target.arguments), "Open")}>Run with arguments</button>
+          <button className="btn" disabled={fixture} onClick={() => void act(() => api.revealApp(app.id), "Location")}>Open file location</button>
+          <button className="btn" disabled={fixture} onClick={() => void act(async () => { await api.copyText(targetText(app)); return { message: "Path copied" }; }, "Copy")}>Copy path</button>
         </div>
       </section>
       <div className="flex gap-2" role="tablist">
@@ -89,18 +104,18 @@ export function DetailsView({
           <Info label="Description" value={app.metadata.description || "Not available"} />
           <Info label="Tags" value={app.tags.length ? app.tags.join(", ") : "None"} />
           <div className="flex flex-wrap gap-2 md:col-span-2">
-            <button className="btn" onClick={() => void act(async () => { await api.updateApp(app.id, { favorite: !app.favorite }); }, "Favorite")}>
-              {app.favorite ? "Remove favorite" : "Favorite"}
+            <button className="btn" disabled={fixture} onClick={() => void act(async () => { await api.updateApp(app.id, { favorite: !app.favorite }); }, "Pin")}>
+              {app.favorite ? "Unpin" : "Pin"}
             </button>
-            <button className="btn" onClick={() => setEditing(true)}>{manual ? "Edit registration" : "Rename and tag"}</button>
-            <button className="btn" onClick={() => void act(async () => api.removeApp(app.id), "Remove")}>
-              {manual ? "Remove custom entry" : "Hide from PulseLauncher"}
+            <button className="btn" disabled={fixture} onClick={() => setEditing(true)}>{manual ? "Edit registration" : "Rename and tag"}</button>
+            <button className="btn" disabled={fixture} onClick={() => void act(async () => api.removeApp(app.id), "Remove")}>
+              {manual ? "Unregister" : "Hide from PulseLauncher"}
             </button>
           </div>
           <div className="md:col-span-2">
             <p className="mb-2 text-sm text-[var(--color-muted)]">Collections</p>
             <div className="flex flex-wrap gap-2">
-              {collections.map((c) => {
+              {collections.length === 0 ? <p className="text-sm text-[var(--color-muted)]">No collections stored.</p> : collections.map((c) => {
                 const on = c.appIds.includes(app.id);
                 return (
                   <button key={c.id} className={`pill ${on ? "border-[var(--color-accent)]" : ""}`} onClick={() => void act(async () => { await api.setMembership(c.id, app.id, !on); }, c.name)}>
@@ -110,23 +125,25 @@ export function DetailsView({
               })}
             </div>
           </div>
+          <div className="md:col-span-2">
+            <h3 className="mb-2 text-sm font-medium">Recent launches</h3>
+            {details.events.length === 0 ? <p className="text-sm text-[var(--color-muted)]">No launches recorded yet.</p> : (
+              <ul className="flex flex-col gap-2">
+                {details.events.slice(0, 5).map((event) => (
+                  <li key={event.id} className="text-sm">
+                    <span className={event.success ? "text-[var(--color-ok)]" : "text-[var(--color-danger)]"}>{event.success ? "Accepted" : "Failed"}</span>
+                    <span className="ml-2 text-[var(--color-muted)]">{formatWhen(event.at)}</span>
+                    <span className="ml-2">{event.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
       ) : null}
       {tab === "preview" ? (
         <section className="card p-5">
-          {details.previews[0]?.dataUrl ? (
-            <img src={details.previews[0].dataUrl} alt={`Preview of ${app.name}`} className="max-h-80 rounded-xl border border-[var(--color-line)]" />
-          ) : (
-            <div className="flex flex-col items-start gap-3">
-              <AppMark name={app.name} icon={icon} size={96} />
-              <h3 className="text-lg">No preview available</h3>
-              <p className="max-w-xl text-[var(--color-muted)]">PulseLauncher does not download product images and does not capture other windows. You can import a screenshot you made yourself. It is stored with PulseLauncher's data and you can delete it.</p>
-            </div>
-          )}
-          <div className="mt-4 flex gap-2">
-            <button className="btn" onClick={() => void importImage(app.id, onNotice, load)}>Import screenshot</button>
-            {details.previews.length ? <button className="btn" onClick={() => void act(async () => { await api.clearPreviews(app.id); }, "Preview")}>Remove preview</button> : null}
-          </div>
+          <p className="text-sm text-[var(--color-muted)]">The imported image stays in the panel on the right.</p>
         </section>
       ) : null}
       {tab === "activity" ? (
@@ -144,10 +161,48 @@ export function DetailsView({
           )}
         </section>
       ) : null}
-      {editing ? (
+      {editing && !fixture ? (
         <EditForm app={app} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); load(); onChanged(); }} onNotice={onNotice} />
       ) : null}
+      </div>
+      <PreviewPanel details={details} icon={icon} fixture={fixture} onNotice={onNotice} reload={load} onClear={() => void act(async () => { await api.clearPreviews(app.id); }, "Preview")} />
     </div>
+  );
+}
+
+function PreviewPanel({
+  details,
+  icon,
+  fixture,
+  onNotice,
+  reload,
+  onClear,
+}: {
+  details: AppDetails;
+  icon?: string | null;
+  fixture: boolean;
+  onNotice: (t: string, b: string) => void;
+  reload: () => void;
+  onClear: () => void;
+}) {
+  const app = details.app;
+  const image = details.previews[0]?.dataUrl;
+  return (
+    <aside className="tile w-full shrink-0 p-4 lg:w-[320px]" aria-label="App preview">
+      {image ? (
+        <img src={image} alt={`Preview of ${app.name}`} className="max-h-80 w-full rounded-xl border border-[var(--color-line)] object-contain" />
+      ) : (
+        <div className="flex min-h-52 flex-col items-start justify-center gap-3 rounded-xl border border-dashed border-[var(--color-line)] p-4">
+          <AppMark name={app.name} icon={icon} size={72} />
+          <h3 className="text-lg">No preview available</h3>
+          <p className="text-sm text-[var(--color-muted)]">PulseLauncher does not download product images and does not capture other windows. You can import a screenshot you made yourself. It is stored with PulseLauncher's data and you can delete it.</p>
+        </div>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button className="btn" disabled={fixture} onClick={() => void importImage(app.id, onNotice, reload)}>Import screenshot</button>
+        {details.previews.length ? <button className="btn" disabled={fixture} onClick={onClear}>Remove preview</button> : null}
+      </div>
+    </aside>
   );
 }
 

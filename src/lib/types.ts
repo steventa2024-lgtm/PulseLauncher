@@ -125,6 +125,8 @@ export interface UserPreferences {
   ollamaModel: string;
   pulseflowUrl: string;
   onboardingComplete: boolean;
+  showAppIcons: boolean;
+  showShortcuts: boolean;
 }
 
 export interface HotkeyStatus {

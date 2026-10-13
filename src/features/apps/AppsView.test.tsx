@@ -4,9 +4,10 @@ import type { AppEntry } from "../../lib/types";
 import { AppsView } from "./AppsView";
 
 const reorderApps = vi.hoisted(() => vi.fn(async () => undefined));
+const updateApp = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock("../../lib/api", () => ({
-  api: { reorderApps },
+  api: { reorderApps, updateApp },
   errorText: (error: unknown) => String(error),
 }));
 
@@ -75,11 +76,18 @@ describe("AppsView", () => {
         onNotice={() => undefined}
       />,
     );
-    fireEvent.dragStart(screen.getByRole("button", { name: "Drag Two" }));
     const one = screen.getByRole("heading", { name: "One" }).closest("article");
     expect(one).not.toBeNull();
-    fireEvent.dragOver(one!);
-    fireEvent.drop(one!);
+    if (typeof document.elementFromPoint !== "function") {
+      Object.defineProperty(Document.prototype, "elementFromPoint", {
+        configurable: true,
+        writable: true,
+        value: () => null,
+      });
+    }
+    vi.spyOn(document, "elementFromPoint").mockReturnValue(one);
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Drag Two" }));
+    fireEvent.pointerUp(screen.getByRole("button", { name: "Drag Two" }));
     expect(reorderApps).toHaveBeenCalledWith(["2", "1"]);
   });
 

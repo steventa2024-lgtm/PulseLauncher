@@ -11,10 +11,11 @@ const appIcons = vi.hoisted(() => vi.fn());
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(async () => () => undefined),
+  emit: vi.fn(async () => undefined),
 }));
 
 vi.mock("../../lib/api", () => ({
-  api: { search, launchApp, hideLauncher, appIcons, runWorkflow: vi.fn(), openIndexed: vi.fn(), copyText: vi.fn(), openUrl: vi.fn() },
+  api: { search, launchApp, hideLauncher, appIcons, runWorkflow: vi.fn(), openIndexed: vi.fn(), copyText: vi.fn(), openUrl: vi.fn(), getPreferences: vi.fn(async () => { throw new Error("no bridge"); }), showMain: vi.fn() },
   errorText: (error: unknown) => (error instanceof Error ? error.message : String(error)),
 }));
 

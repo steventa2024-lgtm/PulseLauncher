@@ -30,6 +30,8 @@ export const DEFAULT_PREFS: UserPreferences = {
   ollamaModel: "",
   pulseflowUrl: "",
   onboardingComplete: false,
+  showAppIcons: true,
+  showShortcuts: true,
 };
 
 interface UiState {

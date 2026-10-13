@@ -2,6 +2,8 @@
 
 A release does not exist until every box that says "required" is done on a Windows 11 x64 machine and the artifact is the file that was tested. This repository does not currently meet that bar.
 
+Phase 3 added studio UI captures under `docs/design/visual-regression/`. Those captures are Linux Chrome or Linux WebKit. They do not check a Windows install. No NSIS file was produced in this phase. No hotkey latency was measured. SmartScreen was not touched.
+
 ## Required before a version is called ready
 
 - [ ] `npm run check` passes on the release commit

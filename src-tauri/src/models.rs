@@ -248,6 +248,16 @@ pub struct UserPreferences {
     pub ollama_model: String,
     pub pulseflow_url: String,
     pub onboarding_complete: bool,
+    /// Letter tiles are used when this is false. Missing JSON keeps the default, on.
+    #[serde(default = "default_true")]
+    pub show_app_icons: bool,
+    /// Keyboard hint pills. Missing JSON keeps the default, on.
+    #[serde(default = "default_true")]
+    pub show_shortcuts: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for UserPreferences {
@@ -286,6 +296,8 @@ impl Default for UserPreferences {
             ollama_model: String::new(),
             pulseflow_url: String::new(),
             onboarding_complete: false,
+            show_app_icons: true,
+            show_shortcuts: true,
         }
     }
 }

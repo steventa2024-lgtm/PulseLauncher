@@ -472,6 +472,15 @@ mod tests {
     }
 
     #[test]
+    fn display_prefs_survive_older_json() {
+        let parsed: crate::models::UserPreferences =
+            serde_json::from_str(r#"{"theme":"light"}"#).unwrap();
+        assert_eq!(parsed.theme, "light");
+        assert!(parsed.show_app_icons);
+        assert!(parsed.show_shortcuts);
+    }
+
+    #[test]
     fn preferences_default_when_missing_or_corrupt() {
         let db = Db::open_in_memory().unwrap();
         assert_eq!(db.preferences().unwrap(), UserPreferences::default());

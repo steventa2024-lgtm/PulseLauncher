@@ -1,12 +1,21 @@
-import { useMemo, useState } from "react";
-import { GripVertical, LayoutGrid, List, Plus, RefreshCw, Star } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Folder, Grid2x2, Pin, Plus, RefreshCw, Settings, Star, Terminal, Workflow, Wrench } from "lucide-react";
 import { api, errorText } from "../../lib/api";
-import { sourceLabel, targetText } from "../../lib/text";
+import { targetText } from "../../lib/text";
 import type { AppEntry, Collection } from "../../lib/types";
 import { AppMark, Empty, Field, Modal } from "../../components/ui";
+import { SearchBox, SidebarItem } from "../../components/chrome";
 import { reorderVisible } from "./reorder";
 
-const FILTERS = ["All", "ZeroPulse", "Developer Tools", "Productivity", "Favorites", "Recent", "Portable"] as const;
+const CATS = [
+  { id: "All", label: "All Apps", icon: Grid2x2 },
+  { id: "ZeroPulse", label: "ZeroPulse", icon: Star },
+  { id: "Favorites", label: "Pinned", icon: Pin },
+  { id: "Developer Tools", label: "Development", icon: Terminal },
+  { id: "Productivity", label: "Productivity", icon: Wrench },
+  { id: "System", label: "System", icon: Folder },
+  { id: "Media", label: "Media", icon: Folder },
+] as const;
 
 export function AppsView({
   apps,
@@ -15,6 +24,8 @@ export function AppsView({
   onOpen,
   onChanged,
   onNotice,
+  onOpenWorkflows,
+  onOpenSettings,
 }: {
   apps: AppEntry[];
   collections: Collection[];
@@ -22,6 +33,8 @@ export function AppsView({
   onOpen: (id: string) => void;
   onChanged: () => void;
   onNotice: (title: string, body: string) => void;
+  onOpenWorkflows?: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [filter, setFilter] = useState<string>("All");
   const [query, setQuery] = useState("");
@@ -31,6 +44,7 @@ export function AppsView({
   const [scanning, setScanning] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [reorderStatus, setReorderStatus] = useState("");
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -40,6 +54,7 @@ export function AppsView({
       if (filter === "Recent") return !!app.lastLaunchedAt;
       if (filter === "Portable") return app.portable || app.source === "manual";
       if (filter === "All") return true;
+      if (filter === "Developer Tools") return app.category === "Developer Tools" || app.category === "Development";
       if (collections.some((c) => c.name === filter)) {
         const collection = collections.find((c) => c.name === filter);
         return !!collection && collection.appIds.includes(app.id);
@@ -75,15 +90,37 @@ export function AppsView({
     const neighbor = visibleIds[index + delta];
     if (index < 0 || neighbor === undefined) return;
     await persistOrder(reorderVisible(apps.map((item) => item.id), visibleIds, app.id, neighbor));
+    setReorderStatus(`${app.name} moved ${delta < 0 ? "up" : "down"} in the visible list.`);
   }
 
-  async function dropOn(targetId: string) {
-    const from = draggingId;
-    setDraggingId(null);
-    setOverId(null);
-    if (!from || from === targetId) return;
-    await persistOrder(reorderVisible(apps.map((item) => item.id), visible.map((item) => item.id), from, targetId));
-  }
+  const dragState = useRef({ draggingId, apps, visible });
+  dragState.current = { draggingId, apps, visible };
+  const persistRef = useRef(persistOrder);
+  persistRef.current = persistOrder;
+
+  useEffect(() => {
+    function onUp(event: PointerEvent) {
+      const from = dragState.current.draggingId;
+      if (!from) return;
+      dragState.current.draggingId = null;
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      const target = under?.closest("[data-app-id]")?.getAttribute("data-app-id") ?? "";
+      const name = dragState.current.apps.find((item) => item.id === from)?.name ?? "App";
+      setDraggingId(null);
+      setOverId(null);
+      if (!target || target === from) return;
+      const next = reorderVisible(
+        dragState.current.apps.map((item) => item.id),
+        dragState.current.visible.map((item) => item.id),
+        from,
+        target,
+      );
+      setReorderStatus(`${name} moved in the visible list.`);
+      void persistRef.current(next);
+    }
+    window.addEventListener("pointerup", onUp);
+    return () => window.removeEventListener("pointerup", onUp);
+  }, []);
 
   async function scan() {
     setScanning(true);
@@ -99,25 +136,49 @@ export function AppsView({
     }
   }
 
-  const chips = Array.from(new Set<string>([...FILTERS, ...collections.map((c) => c.name)]));
+  const extraCollections = collections.filter((c) => !CATS.some((cat) => cat.label === c.name || cat.id === c.name));
+
+  function countFor(id: string) {
+    if (id === "All") return apps.length;
+    if (id === "Favorites") return apps.filter((app) => app.favorite).length;
+    if (id === "Developer Tools") return apps.filter((app) => app.category === "Developer Tools" || app.category === "Development").length;
+    if (id === "ZeroPulse") {
+      const collection = collections.find((c) => c.name === "ZeroPulse");
+      if (collection) return collection.appIds.length;
+    }
+    return apps.filter((app) => app.category === id).length;
+  }
 
   return (
-    <div className="flex flex-col gap-4 pb-8">
+    <>
+    <div className="flex min-h-full gap-4">
+      <nav className="flex w-[228px] shrink-0 flex-col gap-1" aria-label="App categories">
+        {CATS.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <SidebarItem key={cat.id} active={filter === cat.id} icon={<Icon size={15} />} label={cat.label} count={countFor(cat.id)} onClick={() => setFilter(cat.id)} />
+          );
+        })}
+        {extraCollections.map((c) => (
+          <SidebarItem key={c.id} active={filter === c.name} label={c.name} count={c.appIds.length} onClick={() => setFilter(c.name)} />
+        ))}
+        <div className="mt-3 border-t border-[var(--color-line)] pt-2">
+          <SidebarItem active={false} icon={<Workflow size={15} />} label="Commands & Workflows" onClick={() => onOpenWorkflows?.()} />
+          <SidebarItem active={false} icon={<Settings size={15} />} label="Settings" onClick={() => onOpenSettings?.()} />
+        </div>
+      </nav>
+      <p className="sr-only" aria-live="polite">{reorderStatus}</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <input className="field max-w-sm" placeholder="Filter apps" aria-label="Filter apps" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <h2 className="mr-2 text-lg font-semibold">{CATS.find((c) => c.id === filter)?.label ?? filter}</h2>
+        <div className="ml-auto w-full max-w-xs">
+          <SearchBox value={query} onChange={setQuery} placeholder="Search applications..." label="Filter apps" />
+        </div>
         <button className="btn" onClick={() => void scan()} disabled={scanning}><RefreshCw size={16} /> {scanning ? "Scanning" : "Rescan"}</button>
         <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} /> Add app</button>
         <button className="btn btn-ghost" aria-label={grid ? "Show as list" : "Show as grid"} onClick={() => setGrid((v) => !v)}>
-          {grid ? <List size={16} /> : <LayoutGrid size={16} />}
+          {grid ? "List" : "Grid"}
         </button>
-        <span className="ml-auto text-sm text-[var(--color-muted)]">{visible.length} shown</span>
-      </div>
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="App categories">
-        {chips.map((chip) => (
-          <button key={chip} role="tab" aria-selected={filter === chip} className={`pill ${filter === chip ? "border-[var(--color-accent)] text-[var(--color-ink)]" : ""}`} onClick={() => setFilter(chip)}>
-            {chip}
-          </button>
-        ))}
       </div>
       {apps.length === 0 ? (
         <Empty
@@ -128,62 +189,56 @@ export function AppsView({
       ) : visible.length === 0 ? (
         <Empty title="Nothing in this view" body="Try another category, or clear the filter." />
       ) : (
-        <div className={grid ? "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3" : "flex flex-col gap-2"}>
+        <div className={grid ? "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4" : "flex flex-col gap-2"}>
           {visible.map((app) => (
             <article
               key={app.id}
-              className={`card flex gap-3 p-3 ${overId === app.id ? "border-[var(--color-accent)]" : ""} ${draggingId === app.id ? "opacity-60" : ""}`}
+              data-app-id={app.id}
+              className={`tile relative flex flex-col items-center gap-2 p-3 text-center ${overId === app.id ? "border-[var(--color-accent)]" : ""} ${draggingId === app.id ? "opacity-60" : ""}`}
               onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, app }); }}
-              onDragOver={(event) => {
-                if (!draggingId || draggingId === app.id) return;
-                event.preventDefault();
-                setOverId(app.id);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                void dropOn(app.id);
-              }}
+              onPointerEnter={() => { if (draggingId && draggingId !== app.id) setOverId(app.id); }}
             >
+              <button
+                className="absolute top-2 right-2 text-[var(--color-muted)]"
+                aria-label={app.favorite ? `Unpin ${app.name}` : `Pin ${app.name}`}
+                onClick={() => void api.updateApp(app.id, { favorite: !app.favorite }).then(onChanged)}
+              >
+                <Star size={14} className={app.favorite ? "fill-[var(--color-accent)] text-[var(--color-accent)]" : ""} />
+              </button>
               <span
                 role="button"
                 tabIndex={0}
-                draggable
                 aria-label={`Drag ${app.name}`}
                 aria-keyshortcuts="ArrowUp ArrowDown"
                 title="Drag to reorder. Arrow keys move this app in the current list."
-                className="btn btn-ghost cursor-grab self-center px-1"
-                onDragStart={(event) => {
-                  event.dataTransfer?.setData("text/plain", app.id);
-                  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+                className="absolute top-1 left-1 grid h-8 w-8 cursor-grab touch-none place-items-center text-xs text-[var(--color-faint)]"
+                onPointerCancel={() => { setDraggingId(null); setOverId(null); }}
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture?.(event.pointerId);
+                  dragState.current.draggingId = app.id;
                   setDraggingId(app.id);
                   setMenu(null);
                 }}
-                onDragEnd={() => { setDraggingId(null); setOverId(null); }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowUp") { event.preventDefault(); void move(app, -1); }
                   if (event.key === "ArrowDown") { event.preventDefault(); void move(app, 1); }
                 }}
               >
-                <GripVertical size={16} />
+                ::
               </span>
-              <AppMark name={app.name} icon={icons[app.id]} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate font-medium">{app.name}</h3>
-                  {app.favorite ? <Star size={14} className="text-[var(--color-warn)]" aria-label="Favorite" /> : null}
-                  {app.status === "missing" ? <span className="pill pill-danger">Missing</span> : null}
-                </div>
-                <p className="truncate text-sm text-[var(--color-muted)]">{sourceLabel(app.source)} · {app.category ?? "Uncategorized"}</p>
-                <p className="truncate text-xs text-[var(--color-faint)]" title={targetText(app)}>{targetText(app)}</p>
-                <div className="mt-2 flex gap-2">
-                  <button className="btn btn-primary" onClick={() => void launch(app)}>Run</button>
-                  <button className="btn" onClick={() => onOpen(app.id)}>Details</button>
-                </div>
+              <AppMark name={app.name} icon={icons[app.id]} size={42} />
+              <h3 className="w-full truncate text-sm font-medium">{app.name}</h3>
+              <p className="w-full truncate text-xs text-[var(--color-muted)]">{app.category ?? "Uncategorized"}{app.status === "missing" ? " · Missing" : ""}</p>
+              <div className="flex gap-2">
+                <button className="btn btn-primary" onClick={() => void launch(app)}>Run</button>
+                <button className="btn" onClick={() => onOpen(app.id)}>Details</button>
               </div>
             </article>
           ))}
         </div>
       )}
+      </div>
+    </div>
       {menu ? (
         <div className="fixed z-40 min-w-44 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-overlay)]" style={{ left: menu.x, top: menu.y }} role="menu">
           <button className="btn btn-ghost w-full justify-start" onClick={() => { void launch(menu.app); setMenu(null); }}>Run</button>
@@ -198,7 +253,7 @@ export function AppsView({
       ) : null}
       {menu ? <button className="fixed inset-0 z-30 cursor-default" aria-label="Close menu" onClick={() => setMenu(null)} /> : null}
       {adding ? <AddApp collections={collections} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); onChanged(); }} onNotice={onNotice} /> : null}
-    </div>
+    </>
   );
 }
 
